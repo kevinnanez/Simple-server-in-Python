@@ -24,5 +24,18 @@ class Connection(object):
         Atiende eventos de la conexión hasta que termina.
         """
         # FALTA: Manejar recepciones y envíos hasta desconexión
+
+        # Buffering de los request
+        self.request = ""
+        self.partial_request = self.client_socket.recv()    
+
+        while self.partial_request not "":
+            self.request = self.request + self.partial_request
+            self.partial_request = self.client_socket.recv()
+
+
+            
+        
+
         
         pass
