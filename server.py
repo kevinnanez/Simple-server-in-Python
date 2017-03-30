@@ -22,6 +22,12 @@ class Server(object):
         print "Serving %s on %s:%s." % (directory, addr, port)
         # FALTA: Crear socket del servidor, configurarlo, asignarlo
         # a una dirección y puerto, etc.
+        self.s_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.s_socket.bind((addr, port)) # Asigna socket a dirección y puerto señalado
+        self.s_socket.listen(1) # Numero de conexiones permitidas
+        
+        
+        
 
     def serve(self):
         """
@@ -29,7 +35,12 @@ class Server(object):
         y se espera a que concluya antes de seguir.
         """
         while True:
-            pass
+            self.conn_socket, self.client_ip = self.s_socket.accept()
+            self.connection = Connection(self.conn_socket, self.directory)
+            self.conn_socket.close()
+            
+            
+        pass
             # FALTA: Aceptar una conexión al server, crear una
             # Connection para la conexión y atenderla hasta que termine.
 

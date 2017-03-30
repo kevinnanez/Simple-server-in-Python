@@ -15,6 +15,8 @@ class Connection(object):
 
     def __init__(self, socket, directory):
         # FALTA: Inicializar atributos de Connection
+        self.client_socket = socket
+        self.directory = directory        
         pass
 
     def handle(self):
@@ -22,4 +24,5 @@ class Connection(object):
         Atiende eventos de la conexión hasta que termina.
         """
         # FALTA: Manejar recepciones y envíos hasta desconexión
+        
         pass
