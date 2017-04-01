@@ -26,12 +26,41 @@ class Connection(object):
         # FALTA: Manejar recepciones y envíos hasta desconexión
 
         # Buffering de los request
-        self.request = ""
+        self.buffer = ""
         self.partial_request = self.client_socket.recv()    
 
         while self.partial_request not "":
-            self.request = self.request + self.partial_request
+            self.buffer = self.buffer + self.partial_request
+            self.commands = self.request.split("\r\n")
+            if self.commands is "" # nada en buffer
+                continue 
+            else if len(self.commands) is 1 # pedido incompleto
+                continue
+            else if len(self.commands) is not 1 # pedido completo
+                # Fatales
+                for req in self.commands
+                    if req is ""
+                        continue
+                    else if req is "quit"
+                        # quit
+                    else if req is "get_file_listing"
+                        # reply with file listing
+                    else 
+                        arguments = req.split(" ")
+                        if len(arguments) is 2 
+                            if (arguments[0] is "get_metadata")
+                                # try to get metadata of arguments[1]
+                            else 
+                                # error bar request
+                            
+
+                            
+                        else if len(arguments)  
+
+# get_slice\r\n -> ["get_slice", ""] 
             self.partial_request = self.client_socket.recv()
+                
+            
 
 
             
