@@ -11,6 +11,8 @@ DEFAULT_PORT = 19500
 
 EOL = '\r\n'
 
+BUFFSIZE = 4096
+
 
 CODE_OK = 0
 BAD_EOL = 100
