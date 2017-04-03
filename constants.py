@@ -11,8 +11,7 @@ DEFAULT_PORT = 19500
 
 EOL = '\r\n'
 
-BUFFSIZE = 4096
-
+BLANK = ' '
 
 CODE_OK = 0
 BAD_EOL = 100
@@ -54,3 +53,11 @@ for i in xrange(ord('a'), ord('z') + 1):
     VALID_CHARS.add(chr(i))
 for i in xrange(ord('0'), ord('9') + 1):
     VALID_CHARS.add(chr(i))
+
+# Seteamos un switch para elegir el comando
+execute = {
+    "quit": quit,
+    "get_file_listing": get_file_listing,
+    "get_metadata": get_metadata,
+    "get_slice": get_slice
+}

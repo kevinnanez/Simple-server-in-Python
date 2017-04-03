@@ -6,6 +6,11 @@ import socket
 from os import listdir
 from constants import *
 
+class Request(object):
+
+    def __init__(self, command, size):
+        self.command = command
+        self.size = size
 
 class Connection(object):
     """
@@ -17,59 +22,56 @@ class Connection(object):
     def __init__(self, socket, directory):
         # FALTA: Inicializar atributos de Connection
         self.client_socket = socket
-        self.directory = directory        
-        pass
+        self.directory = directory
+        self.current_state = CODE_OK # Es necesario tener una constancia
+        self.response = ""              # del estado (funcional o erroneo)
+        # Buffering de los request
 
     def handle(self):
         """
         Atiende eventos de la conexión hasta que termina.
         """
         # FALTA: Manejar recepciones y envíos hasta desconexión
+        socket_buffer = ""
 
-        # Buffering de los request
-        self.buffer = ""
-        self.partial_request = self.client_socket.recv()    
-
-        while self.partial_request not "":
-            self.buffer = self.buffer + self.partial_request
-            self.commands = self.buffer.split("\r\n")
-            if self.commands is "": # nada en buffer
-                continue 
-            else if len(self.commands) is 1: # pedido incompleto
-                continue
-            else if len(self.commands) is not 1: # pedido completo
-                if self.commands[-1] is not "":
-                    self.commands[:1]
-                for req in self.commands: # estos pedidos si estan estan completos (\r\n),
-                                         # de lo contrario estan malformados. (solo pedidos
-                                         # completos)
-                    if req is "":
-                        continue
-                    else if req is "quit":
-                        return
-                    else if req is "get_file_listing":
-                        # reply with file listing
-                    else :
-                        arguments = req.split(" ")
-                        if len(arguments) is 2 :
-                            if arguments[0] is "get_metadata":
-                                # try to get metadata of arguments[1]
-                            else :
-                                # error bad request
-
-                        else if len(arguments) is 3:
-                            if arguments[0] is "get_slice":
-                                #try to get slice of arguments[1] from arguments[2] to arguments[3]
-                            else:
-                                # error bad request
-
-                    else:
-                        # error bad request
-
-
-
+        while True:
             self.partial_request = self.client_socket.recv()
+            socket_buffer = socket_buffer + self.partial_request
+            # Si no hay pedidos, esperarlos
+            if not socket_buffer: # socket_buffer esta vacio -> el cliente 
+                continue          # no ha hablado
                 
+            # EOL request?
+            if socket_buffer.count(EOL) > 0:
+                # Toma solo un comando, sin importar cuantos han sido enviados
+                request_command, socket_buffer = socket_buffer.split(EOL, 1)
+                request_size = len(request)
+                self.request = Request(request_command, request_size)
+                if not self.request.size: # check request no esta vacio 
+                                          # (caso split(EOL)."\r\n" -> ["",""] )
+                    self.arguments = self.request.command.split(BLANK) 
+                    """ 
+                    Si habia multiples argumentos, self.arguments los guarda en 
+                    un arreglo, si habia uno, devuelve un arreglo con ese unico
+                    argumento
+                    """ 
+                    self.wish = self.arguments[:1]
+                    self.data = self.arguments[1:]
+                    
+                    self.respond()
+
+
+    def respond(self):
+        """
+        A esta función solo llegan los pedidos separados por opción y 
+        argumentos para esa opción
+        - Se utiliza un equivalente a switch (de C) para elegir una funcion a 
+        ejecutar
+        """
+        if self.wish in execute:
+            execute[self.wish]()      
+
+
     def quit(self):
         print ("0 {0}", % error_messages[CODE_OK])
         return
