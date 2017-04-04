@@ -25,7 +25,7 @@ class Connection(object):
         self.directory = directory
         self.current_state = CODE_OK # Es necesario tener una constancia
         self.response = ""              # del estado (funcional o erroneo)
-        # Buffering de los request
+        self.error_count = 0
 
     def handle(self):
         """
@@ -58,28 +58,41 @@ class Connection(object):
                     self.wish = self.arguments[:1]
                     self.data = self.arguments[1:]
                     
-                    self.respond()
+                    if self.wish in execute:
+                        execute[self.wish]()
+                    else:
+                        self.current_state = INVALID_ARGUMENTS
+                        self.error_count++
+
+            # Despues de todo, habla con el cliente
+            if not error_count:            
+                self.respond()
+            else:
+                self.error()
 
 
-    def respond(self):
-        """
-        A esta función solo llegan los pedidos separados por opción y 
-        argumentos para esa opción
-        - Se utiliza un equivalente a switch (de C) para elegir una funcion a 
-        ejecutar
-        """
-        if self.wish in execute:
-            execute[self.wish]()      
+
+
+   
+    def error(self):
+        # A definir manejo de errores.
 
 
     def quit(self):
-        print ("0 {0}", % error_messages[CODE_OK])
-        return
+        self.response = ("{0} {1}", % CODE_OK, error_messages[CODE_OK])
 
-    def give_file_listing(self):
-        files_listed = os.listdir(self.directory)
-        for file in files_listed :
-            print ("{0} {1}", % (file, EOL))
+    def respond():
+        self.client_socket.send(self.response)
+
+    def get_file_listing(self):
+
+        files = os.listdir(self.directory)
+        for file in files:
+            response = response + EOL
+        
+
+
+
 
 
 

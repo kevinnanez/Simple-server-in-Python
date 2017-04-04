@@ -37,7 +37,9 @@ class Server(object):
         while True:
             self.conn_socket, self.client_ip = self.s_socket.accept()
             self.connection = Connection(self.conn_socket, self.directory)
+            self.connection.handle()
             self.conn_socket.close()
+
             
             
         pass
