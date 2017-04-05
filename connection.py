@@ -92,6 +92,11 @@ class Connection(object):
         self.force_disconnection = 1
 
     def respond(self):
+        """
+         Que pasa si el cliente se desconecta sin enviar quit? Entonces send
+         devuelve una excepción.
+        """
+
         try:
             self.client_socket.send(self.response)
         except IOError:
