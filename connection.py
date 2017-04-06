@@ -121,6 +121,29 @@ class Connection(object):
             self.current_state = INVALID_COMMAND
             self.error_count++
 
+    def get_metadata(self):
+        try:
+            self.response = os.path.getsize(self.data) + EOL
+        except OSError:
+            self.current_state = FILE_NOT_FOUND
+            self.error_count++
+
+    def get_slice(self):
+        #Falta lo de offset-len-tamaño archivo
+        try:
+            file = open(self.data[:2], "rb")
+            slices = split(file, self.data[2:]) + ""
+            for i in slices:
+                self.response = len(slices[i]) + " " + slices[i] + EOL
+            file.close()
+        except OSError:
+            self.current_state = FILE_NOT_FOUND
+            self.error_count++
+
+        
+
+
+
         
 
 
