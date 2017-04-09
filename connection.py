@@ -88,7 +88,7 @@ class Connection(object):
 
 
     def quit(self):
-        self.response = ("{0} {1}", % CODE_OK, "Goodbye!")
+        self.response = ("{0} {1}", % CODE_OK, error_messages[CODE_OK] + EOL)
         self.force_disconnection = 1
 
     def respond(self):
@@ -98,6 +98,8 @@ class Connection(object):
         """
 
         try:
+            self.client_socket.send(self.current_state + " " \
+                                    + error_messages[self.current_state] + EOL)
             self.client_socket.send(self.response)
         except IOError:
             self.error_count++
@@ -106,7 +108,7 @@ class Connection(object):
 
     def get_file_listing(self):
         try:
-            files = os.listdir(self.directory)
+            files = os.listdir(self.directory) 
             for file in files:
                 self.response = self.response + EOL
         except OSError:
@@ -122,19 +124,37 @@ class Connection(object):
             self.error_count++
 
     def get_metadata(self):
+        """
+        El unico metadato actual es el tamaño.  Solo pueden obtenerse los 
+        metadatos de los archivos que serían devueltos por get file listing
+        """
         try:
-            self.response = os.path.getsize(self.data) + EOL
+            files = os.listdir(self.directory) 
+            if self.data in files
+                try:
+                    self.response = os.path.getsize(self.data) + EOL
+                except OSError:
+                    self.current_state = FILE_NOT_FOUND
+                    self.error_count++
+            else
+                self.current_state = FILE_NOT_FOUND
+                self.error_count++
+
         except OSError:
-            self.current_state = FILE_NOT_FOUND
+            self.current_state = INTERNAL_ERROR
             self.error_count++
+            self.force_disconnection = 1
+        
 
     def get_slice(self):
-        #Falta lo de offset-len-tamaño archivo
+
+
+        filename, offset, size = self.data.split(BLANK)
         try:
             file = open(self.data[:2], "rb")
             slices = split(file, self.data[2:]) + ""
             for i in slices:
-                self.response = len(slices[i]) + " " + slices[i] + EOL
+                self.response = len(slices[i]) + BLANK + slices[i] + EOL
             file.close()
         except OSError:
             self.current_state = FILE_NOT_FOUND
