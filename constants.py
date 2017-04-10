@@ -45,7 +45,6 @@ def fatal_status(s):
     assert valid_status(s)
     return 100 <= s < 200
 
-
 VALID_CHARS = set(".-_")
 for i in range(ord('A'), ord('Z') + 1):
     VALID_CHARS.add(chr(i))

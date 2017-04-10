@@ -9,6 +9,7 @@ import optparse
 import socket
 from constants import *
 import connection
+import os
 
 
 class Server(object):
@@ -23,6 +24,11 @@ class Server(object):
         # FALTA: Crear socket del servidor, configurarlo, asignarlo
         # a una dirección y puerto, etc.
         self.s_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.s_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        try:
+            os.mkdir(directory)
+        except OSError:
+            pass
         self.s_socket.bind((addr, port)) # Asigna socket a dirección y puerto señalado
         self.s_socket.listen(1)
         self.directory = directory # Numero de conexiones permitidas
@@ -38,8 +44,7 @@ class Server(object):
         while True:
             self.conn_socket, self.client_ip = self.s_socket.accept()
             self.connection = connection.Connection(self.conn_socket, self.directory)
-            self.connection.handle()
-            self.conn_socket.close()
+            self.connection.handle()    
 
             # FALTA: Aceptar una conexión al server, crear una
             # Connection para la conexión y atenderla hasta que termine.
