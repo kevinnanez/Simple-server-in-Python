@@ -24,7 +24,8 @@ class Server(object):
         # a una dirección y puerto, etc.
         self.s_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.s_socket.bind((addr, port)) # Asigna socket a dirección y puerto señalado
-        self.s_socket.listen(1) # Numero de conexiones permitidas
+        self.s_socket.listen(1)
+        self.directory = directory # Numero de conexiones permitidas
         
         
         
@@ -40,9 +41,6 @@ class Server(object):
             self.connection.handle()
             self.conn_socket.close()
 
-            
-            
-        pass
             # FALTA: Aceptar una conexión al server, crear una
             # Connection para la conexión y atenderla hasta que termine.
 

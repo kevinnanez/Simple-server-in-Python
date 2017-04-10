@@ -28,6 +28,8 @@ class Connection(object):
         self.response = ""              # del estado (funcional o erroneo)
         self.error_count = 0
         self.force_disconnection = 0
+        self.force_send = False
+        self.client_is_here = True
 
     def handle(self):
         """
@@ -37,7 +39,7 @@ class Connection(object):
         socket_buffer = ""
 
         while not force_disconnection: 
-            self.partial_request = self.client_socket.recv()
+            self.partial_request = self.client_socket.recv(4096)
             socket_buffer = socket_buffer + self.partial_request
             # Si no hay pedidos, esperarlos
             if not socket_buffer: # socket_buffer esta vacio -> el cliente 
@@ -54,7 +56,7 @@ class Connection(object):
                     if ('\n' in self.request.command) or \
                         ('\r' in self.request.command):
                         self.current_state = BAD_EOL
-                        self.error_count++
+                        self.error_count+=1
                         self.force_disconnection = 1
 
                     self.arguments = self.request.command.split(BLANK) 
@@ -68,42 +70,60 @@ class Connection(object):
                     
                     self.react()
 
-            # Despues de todo, habla con el cliente
-            if not self.error_count:            
-                self.respond()
-                if self.error_count: 
-                    self.error()
-            else:
-                self.error()
+                    # Despues de todo, habla con el cliente
+                    if not self.error_count:
+                        if not self.force_send:            
+                            self.respond()
+                            if self.error_count: 
+                                self.error()
 
+                    else:
+                        self.error()
 
+                    self.force_send = False
 
 
 
    
     def error(self):
-        self.error_count = 0
-        self.response = ("{0} {1}", % self.current_state, \
-                        error_messages[self.current_state])
+        if client_is_here:
+            self.error_count = 0
+            self.response = ("{0} {1}", % self.current_state, \
+                            error_messages[self.current_state])
+        else:
+            return
 
 
     def quit(self):
         self.response = ("{0} {1}", % CODE_OK, error_messages[CODE_OK] + EOL)
         self.force_disconnection = 1
 
-    def respond(self):
+    def respond(self, *args, **kwargs):
         """
          Que pasa si el cliente se desconecta sin enviar quit? Entonces send
          devuelve una excepción.
         """
+        if not args:  
+            try:
+                self.client_socket.send(self.current_state + " " \
+                                        + error_messages[self.current_state] \
+                                        + EOL)
+                self.client_socket.send(self.response)
+            except IOError:
+                self.error_count+=1
+                self.force_disconnection = 1
+                self.client_is_here = False
+        else:
+            get_slice_response = args[0]
 
-        try:
-            self.client_socket.send(self.current_state + " " \
-                                    + error_messages[self.current_state] + EOL)
-            self.client_socket.send(self.response)
-        except IOError:
-            self.error_count++
-            self.force_disconnection = 1
+            try:
+                self.client_socket.send(get_slice_response)
+
+            except IOError:
+                self.error_count+=1
+                self.force_disconnection = 1
+                self.client_is_here = False
+
 
 
     def get_file_listing(self):
@@ -113,7 +133,7 @@ class Connection(object):
                 self.response = self.response + EOL
         except OSError:
             self.current_state = INTERNAL_ERROR
-            self.error_count++
+            self.error_count+=1
             self.force_disconnection = 1
 
     def react(self):
@@ -121,7 +141,7 @@ class Connection(object):
             execute[self.wish]()
         else:
             self.current_state = INVALID_COMMAND
-            self.error_count++
+            self.error_count+=1
 
     def get_metadata(self):
         """
@@ -130,35 +150,85 @@ class Connection(object):
         """
         try:
             files = os.listdir(self.directory) 
-            if self.data in files
+            if self.data in files:
                 try:
                     self.response = os.path.getsize(self.data) + EOL
                 except OSError:
-                    self.current_state = FILE_NOT_FOUND
-                    self.error_count++
-            else
+                    self.current_state = INTERNAL_ERROR
+                    self.error_count+=1
+                    self.force_disconnection = 1
+            else:
                 self.current_state = FILE_NOT_FOUND
-                self.error_count++
+                self.error_count+=1
 
         except OSError:
             self.current_state = INTERNAL_ERROR
-            self.error_count++
+            self.error_count+=1
             self.force_disconnection = 1
         
 
     def get_slice(self):
 
+        if len(self.data.split(BLANK)) < 3:
+            current_state = BAD_REQUEST
+            force_disconnection = 1
+            error_count+=1
+            return
 
         filename, offset, size = self.data.split(BLANK)
-        try:
-            file = open(self.data[:2], "rb")
-            slices = split(file, self.data[2:]) + ""
-            for i in slices:
-                self.response = len(slices[i]) + BLANK + slices[i] + EOL
-            file.close()
-        except OSError:
+
+        files = os.listdir(self.directory) 
+        if filename not in files:
             self.current_state = FILE_NOT_FOUND
-            self.error_count++
+            self.error_count+=1
+            return
+
+        if (not offset.isdigit()) or (not size.isdigit()):
+            current_state = INVALID_ARGUMENTS
+            error_count+=1
+            return 
+
+        offset = int(offset)
+        size = int(size)
+
+        size_of_file = os.path.getsize(filename)
+
+        if (offset >= size_of_file) or ((offset + size) > size_of_file):
+            current_state = BAD_OFFSET
+            self.error_count+=1
+            return
+
+        try:
+            file = open(filename, "r")
+            file.seek(offset)
+            slices_size = 0
+
+            self.respond(self.current_state + " " \
+                        + error_messages[self.current_state] + EOL)
+
+            while (size > slices_size) and (not self.force_disconnection):
+                if 4096 > size - slices_size:
+                    file = file.read(size - slices_size)
+                    slices_size+=4096
+                else 
+                    file = file.read(size - slices_size)
+                    slices_size+=(size - slices_size)
+
+                self.respond(slices_size + " " + file + EOL)
+            if not force_disconnection:
+                self.respond("0" + " " + EOL)
+                file.close()
+                self.force_send = True
+            else:
+                return
+            """for i in slices:
+                self.response = len(slices[i]) + BLANK + slices[i] + EOL"""
+        except OSError:
+            self.current_state = INTERNAL_ERROR
+            self.error_count+=1
+            self.force_disconnection = 1
+            return
+
 
         
 
