@@ -47,17 +47,9 @@ def fatal_status(s):
 
 
 VALID_CHARS = set(".-_")
-for i in xrange(ord('A'), ord('Z') + 1):
+for i in range(ord('A'), ord('Z') + 1):
     VALID_CHARS.add(chr(i))
-for i in xrange(ord('a'), ord('z') + 1):
+for i in range(ord('a'), ord('z') + 1):
     VALID_CHARS.add(chr(i))
-for i in xrange(ord('0'), ord('9') + 1):
+for i in range(ord('0'), ord('9') + 1):
     VALID_CHARS.add(chr(i))
-
-# Seteamos un switch para elegir el comando
-execute = {
-    "quit": quit,
-    "get_file_listing": get_file_listing,
-    "get_metadata": get_metadata,
-    "get_slice": get_slice
-}

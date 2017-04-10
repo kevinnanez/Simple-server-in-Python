@@ -7,8 +7,8 @@
 
 import optparse
 import socket
-import connection
 from constants import *
+import connection
 
 
 class Server(object):
@@ -19,7 +19,7 @@ class Server(object):
 
     def __init__(self, addr=DEFAULT_ADDR, port=DEFAULT_PORT,
                  directory=DEFAULT_DIR):
-        print "Serving %s on %s:%s." % (directory, addr, port)
+        print ("Serving %s on %s:%s." % (directory, addr, port))
         # FALTA: Crear socket del servidor, configurarlo, asignarlo
         # a una dirección y puerto, etc.
         self.s_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -37,7 +37,7 @@ class Server(object):
         """
         while True:
             self.conn_socket, self.client_ip = self.s_socket.accept()
-            self.connection = Connection(self.conn_socket, self.directory)
+            self.connection = connection.Connection(self.conn_socket, self.directory)
             self.connection.handle()
             self.conn_socket.close()
 

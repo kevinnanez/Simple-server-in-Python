@@ -38,7 +38,7 @@ class Connection(object):
         # FALTA: Manejar recepciones y envíos hasta desconexión
         socket_buffer = ""
 
-        while not force_disconnection: 
+        while not self.force_disconnection: 
             self.partial_request = self.client_socket.recv(4096)
             socket_buffer = socket_buffer + self.partial_request
             # Si no hay pedidos, esperarlos
@@ -49,7 +49,7 @@ class Connection(object):
             if socket_buffer.count(EOL) > 0:
                 # Toma solo un comando, sin importar cuantos han sido enviados
                 request_command, socket_buffer = socket_buffer.split(EOL, 1)
-                request_size = len(request)
+                request_size = len(request_command)
                 self.request = Request(request_command, request_size)
                 if not self.request.size: # check request no esta vacio 
                                           # (caso split(EOL)."\r\n" -> ["",""] )
@@ -88,14 +88,14 @@ class Connection(object):
     def error(self):
         if client_is_here:
             self.error_count = 0
-            self.response = ("{0} {1}", % self.current_state, \
+            self.response = (("{0} {1}" % self.current_state), \
                             error_messages[self.current_state])
         else:
             return
 
 
     def quit(self):
-        self.response = ("{0} {1}", % CODE_OK, error_messages[CODE_OK] + EOL)
+        self.response = (("{0} {1}" % CODE_OK, error_messages[CODE_OK]) + EOL)
         self.force_disconnection = 1
 
     def respond(self, *args, **kwargs):
@@ -210,7 +210,7 @@ class Connection(object):
                 if 4096 > size - slices_size:
                     file = file.read(size - slices_size)
                     slices_size+=4096
-                else 
+                else:
                     file = file.read(size - slices_size)
                     slices_size+=(size - slices_size)
 
@@ -229,18 +229,11 @@ class Connection(object):
             self.force_disconnection = 1
             return
 
-
-        
-
-
-
-        
-
-
-
-
-
-
-
-
+    # Seteamos un switch para elegir el comando
+    execute = {
+    'quit': quit, \
+    'get_file_listing': get_file_listing, \
+    'get_metadata': get_metadata, \
+    'get_slice': get_slice \
+    }
 

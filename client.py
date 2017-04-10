@@ -254,17 +254,17 @@ def main():
         sys.stderr.write("Error al conectarse\n")
         sys.exit(1)
 
-    print "* Bienvenido al cliente HFTP - " \
+    print ("* Bienvenido al cliente HFTP - " \
           "the Home-made File Transfer Protocol *\n" \
-          "* Estan disponibles los siguientes archivos:"
+          "* Estan disponibles los siguientes archivos:")
 
     files = client.file_lookup()
 
     for filename in files:
-        print filename
+        print (filename)
 
     if client.status == CODE_OK:
-        print "* Indique el nombre del archivo a descargar:"
+        print ("* Indique el nombre del archivo a descargar:")
         client.retrieve(raw_input().strip())
 
     client.close()
