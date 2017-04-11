@@ -19,7 +19,8 @@ Se asignan `conn_socket` y directory a los atributos `client.socket` y `self.dir
 Es el loop principal del servidor. Decidimos guardar los comandos que envía el cliente en un buffer y dividirlos con `split` cuando aparezca el terminador `\r\n`, tuvimos que tener en cuenta que el terminador puede venir incompleto por lo que se implementaron las correspondientes excepciones. También decidimos guardar los argumentos de los comandos en una lista para facilitar su interpretación. Cierra la conexión cuando se ejecutan excepciones, errores fatales, desconexión del cliente o `quit`.
 
 ####error_notify
-Solo notifica al servidor de errores de ejecución o comunicación con el cliente.
+Funcionamiento: Desde aqui se notifica al servidor de los errores generados por el funcionamiento o la interacción con el cliente. Solo se envian notificaciones de errores, cualquier respuesta cargada al sistema por la ejecución de algún metodo sera eliminada.
+También, se resetea el estado del funcionamiento actual a 0 (CODE_OK)
 
 ####respond
 Maneja las respuestas al cliente, puede o no recibir argumentos además de los atributos.
@@ -32,32 +33,19 @@ Cierra la sesión del cliente seteando `force_disconnection` en 1.
 
 ####react
 Maneja los pedidos al servidor y determina el método a ejecutar. En `handle` guardamos el comando en `self.wish`, ahora lo interpretamos y verificamos que tanto el comando como sus argumentos sean válidos, si no lo son se ejecutan las excepciones correspondientes.
-Errores: Notificará de un error si
-    * El pedido esta mal formado
-    * Los argumentos son invalidos
-    * El comando no es un metodo valido
+Errores: Notificará de un error si * El pedido esta mal formado * Los argumentos son invalidos * El comando no es un metodo valido
 
 ####get_file_listing
 Con `os.listdir` accedemos al directorio y lo listamos, si hubo error ejecuta la excepción correspondiente.
-Errores: Notificará de un error si
-* Ocurre un error al listar los archivos en el directorio
+Errores: Notificará de un error si * Ocurre un error al listar los archivos en el directorio
 
 ####get_metada
 Si el archivo solicitado por el cliente existe en el directorio devuelve su tamaño. En este método tuvimos que tener en cuenta si el archivo no existe o si hubo problema al listar los archivos.
-Notificará de un error si: 
-* no existe el archivo del pedido
-* ocurre un error de tipo en el argumento (relatado en respond())
-* el archivo no esta en el directorio
-* ocurre un error al listar los archivos
+Notificará de un error si * no existe el archivo del pedido * ocurre un error de tipo en el argumento (relatado en respond()) * el archivo no esta en el directorio * ocurre un error al listar los archivos
 
 ####get_slice
 Este método fue el más complicado. Primero nos fijamos si el archivo existe, si los argumentos son válidos y si la porción del archivo solicitada por el cliente es válida. Si lo son abrimos el archivo en modo lectura y nos paramos en el offset, si es necesario divide la porción en partes más chicas para poder enviarlo. La respuesta incluye el tamaño de la porción + la porción enviada, hasta terminar de enviar lo solicitado. Notar que esta función tiene acceso a la ejecución de otras funciones como respond(), algo que no tienen otros metodos (de uso exclusivo del cliente), debido a que aqui son necesarias respuestas dinamicas. Para ello utilizamos dos variables tanto para notificar a respond() como para notificar a el handle de los envios apresurados.
-Errores: Notificará de un error si
-    * no existe el archivo del pedido
-    * ocurre un error de tipo en el argumento (relatado en respond() y aqui)
-    * ocurre un error al abrir (open()) el archivo
-    * el archivo no esta en el directorio
-    * no se cumple offset≤filesize<offset+size
+Errores: Notificará de un error si * no existe el archivo del pedido * ocurre un error de tipo en el argumento (relatado en respond() y aqui) * ocurre un error al abrir (open()) el archivo * el archivo no esta en el directorio * no se cumple offset≤filesize<offset+size
 
 
 ###Bibliografia
