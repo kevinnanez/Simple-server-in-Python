@@ -289,7 +289,7 @@ class Connection(object):
     desconexion apresurada del cliente.
         Es aqui donde se checkean todos los request que llegan al servidor y se
     dividen en comandos y argumentos, para luego comenzar su ejecución.
-        Al cerrarse el ciclo
+        Al cerrarse el ciclo se desconecta el cliente.
         """
         socket_buffer = ""
         while not self.force_disconnection and self.client_is_here:
