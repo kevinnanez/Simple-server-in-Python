@@ -207,80 +207,87 @@ class Connection(object):
     como respond(), algo que no tienen otros metodos (de uso exclusivo del
     cliente), debido a que aqui son necesarias respuestas dinamicas al cliente.
         """
-        filename, offset, size = self.data
+	if not ("" in self.data):
 
-        files = os.listdir(self.directory)
-        if filename not in files:
-            self.current_state = FILE_NOT_FOUND
-            self.error_count += 1
-        else:
-            if (not offset.isdigit()) or (not size.isdigit()):
-                self.current_state = INVALID_ARGUMENTS
+            filename, offset, size = self.data
+
+            files = os.listdir(self.directory)
+            if filename not in files:
+                self.current_state = FILE_NOT_FOUND
                 self.error_count += 1
             else:
-                offset = int(offset)
-                size = int(size)
-
-                size_of_file = os.path.getsize(
-                    os.path.join(self.directory, filename))
-
-                if (offset >= size_of_file) or \
-                ((offset + size) > size_of_file) or not size_of_file:
-                    self.current_state = BAD_OFFSET
+                if (not offset.isdigit()) or (not size.isdigit()):
+                    self.current_state = INVALID_ARGUMENTS
                     self.error_count += 1
                 else:
-                    try:
-                        file = open(os.path.join(self.directory, filename),
-                                    "r")
-                        file.seek(offset)
+                    offset = int(offset)
+                    size = int(size)
 
-                        self.respond(str(self.current_state) + " " +
-                                     error_messages[self.current_state] +
-                                     EOL)
+                    size_of_file = os.path.getsize(
+                        os.path.join(self.directory, filename))
 
-                        while size and \
-                        (not self.force_disconnection):
-                            if 4096 > size:
-                                file_slice = file.read(size)
-                                size = 0
-                            else:
-                                file_slice = file.read(4096)
-                                size -= 4096
+                    if (offset >= size_of_file) or \
+                    ((offset + size) > size_of_file) or not size_of_file:
+                        self.current_state = BAD_OFFSET
+                        self.error_count += 1
+                    else:
+                        try:
+                            file = open(os.path.join(self.directory, filename),
+                                        "r")
+                            file.seek(offset)
 
-                            file_slice_helper = file_slice.split("\n")
-                            breaks_slice = file_slice.count("\n")
-                            size += breaks_slice
+                            self.respond(str(self.current_state) + " " +
+                                         error_messages[self.current_state] +
+                                         EOL)
 
-                            if len(file_slice_helper) > 1:
-                                file_slice_first = file_slice_helper[0]
-                                file_slice_helper = file_slice_helper[1:]
-                                file_slice = ""
-                                for sli in file_slice_helper:
-                                    if len(sli) != 0:
-                                        file_slice += (EOL + str(len(sli)) +
-                                                       " " + sli)
+                            while size and \
+                            (not self.force_disconnection):
+                                if 4096 > size:
+                                    file_slice = file.read(size)
+                                    size = 0
+                                else:
+                                    file_slice = file.read(4096)
+                                    size -= 4096
 
-                                file_slice = str(len(file_slice_first)) + \
-                                    " " + file_slice_first + file_slice
+                                file_slice_helper = file_slice.split("\n")
+                                breaks_slice = file_slice.count("\n")
+                                size += breaks_slice
 
-                            else:
-                                file_slice = str(len(file_slice)) + " " + \
-                                             file_slice
+                                if len(file_slice_helper) > 1:
+                                    file_slice_first = file_slice_helper[0]
+                                    file_slice_helper = file_slice_helper[1:]
+                                    file_slice = ""
+                                    for sli in file_slice_helper:
+                                        if len(sli) != 0:
+                                            file_slice += (EOL + str(len(sli)) +
+                                                           " " + sli)
+
+                                    file_slice = str(len(file_slice_first)) + \
+                                        " " + file_slice_first + file_slice
+
+                                else:
+                                    file_slice = str(len(file_slice)) + " " + \
+                                                 file_slice
+
+                                if not self.force_disconnection:
+                                    self.respond(file_slice + EOL)
 
                             if not self.force_disconnection:
-                                self.respond(file_slice + EOL)
+                                self.respond(str(CODE_OK) + " " + EOL)
+                                self.force_send = True
+                            else:
+                                return
 
-                        if not self.force_disconnection:
-                            self.respond(str(CODE_OK) + " " + EOL)
-                            self.force_send = True
-                        else:
+                        except OSError:
+                            self.current_state = INTERNAL_ERROR
+                            self.error_count += 1
+                            self.force_disconnection = 1
                             return
-
-                    except OSError:
-                        self.current_state = INTERNAL_ERROR
-                        self.error_count += 1
-                        self.force_disconnection = 1
-                        return
+        else:
+            self.current_state = BAD_REQUEST
+            self.error_count += 1
+            self.force_disconnection = 1
+	    return
 
     def handle(self):
         """
