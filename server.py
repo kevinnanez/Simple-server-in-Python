@@ -25,10 +25,6 @@ class Server(object):
         # a una dirección y puerto, etc.
         self.s_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.s_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        try:
-            os.mkdir(directory)
-        except OSError:
-            pass
         self.s_socket.bind((addr, port)) # Asigna socket a dirección y puerto señalado
         self.s_socket.listen(1)
         self.directory = directory # Numero de conexiones permitidas
