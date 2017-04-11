@@ -32,9 +32,15 @@ Cierra la sesión del cliente seteando `force_disconnection` en 1.
 
 ####react
 Maneja los pedidos al servidor y determina el método a ejecutar. En `handle` guardamos el comando en `self.wish`, ahora lo interpretamos y verificamos que tanto el comando como sus argumentos sean válidos, si no lo son se ejecutan las excepciones correspondientes.
+Errores: Notificará de un error si
+    a) El pedido esta mal formado
+    b) Los argumentos son invalidos
+    c) El comando no es un metodo valido
 
 ####get_file_listing
 Con `os.listdir` accedemos al directorio y lo listamos, si hubo error ejecuta la excepción correspondiente.
+Errores: Notificará de un error si
+    *) Ocurre un error al listar los archivos en el directorio
 
 ####get_metada
 Si el archivo solicitado por el cliente existe en el directorio devuelve su tamaño. En este método tuvimos que tener en cuenta si el archivo no existe o si hubo problema al listar los archivos.
