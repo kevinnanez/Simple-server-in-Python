@@ -120,7 +120,7 @@ class Connection(object):
         if self.wish == "get_file_listing":
             self.get_file_listing()
         elif self.wish == "get_metadata":
-            if (len(self.data) < 1):
+            if (len(self.data) != 1):
                 self.current_state = BAD_REQUEST
                 self.error_count += 1
                 self.force_disconnection = 1
@@ -130,7 +130,7 @@ class Connection(object):
             else:
                 self.get_metadata()
         elif self.wish == "get_slice":
-            if (len(self.data) < 3):
+            if (len(self.data) != 3):
                 self.current_state = BAD_REQUEST
                 self.error_count += 1
                 self.force_disconnection = 1
