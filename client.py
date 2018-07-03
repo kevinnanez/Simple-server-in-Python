@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 # encoding: utf-8
-# Revisión: 2015 Matias Molina
 # Revisiones 2013-2014 Carlos Bederián
 # Revisión 2011 Nicolás Wolovick
 # Copyright 2008-2010 Natalia Bidart y Daniel Moisset
@@ -38,8 +37,8 @@ class Client(object):
         self.send('quit')
         self.status, message = self.read_response_line()
         if self.status != CODE_OK:
-            logging.warn("Warning: quit no contesto ok, sino '%s'(%s)'." %
-                         (message, self.status))
+            logging.warn("Warning: quit no contesto ok, sino '%s'(%s)'."
+                            % (message, self.status))
         self.connected = False
         self.s.close()
 
@@ -55,8 +54,8 @@ class Client(object):
         self.s.settimeout(timeout)
         message += EOL  # Completar el mensaje con un fin de línea
         while message:
-            logging.debug("Enviando el (resto del) mensaje %s." %
-                          repr(message))
+            logging.debug("Enviando el (resto del) mensaje %s."
+                            % repr(message))
             bytes_sent = self.s.send(message)
             assert bytes_sent > 0
             message = message[bytes_sent:]
@@ -79,10 +78,10 @@ class Client(object):
         Espera datos hasta obtener una línea completa delimitada por el
         terminador del protocolo.
 
-        Devuelve la línea, eliminando el terminador y los espacios en blanco
+        Devuelve la línea, eliminando el terminaodr y los espacios en blanco
         al principio y al final.
         """
-        while EOL not in self.buffer and self.connected:
+        while not EOL in self.buffer and self.connected:
             if timeout is not None:
                 t1 = time.clock()
             self._recv(timeout)
@@ -115,26 +114,17 @@ class Client(object):
             logging.warn(u"Respuesta inválida: '%s'" % response)
         return result
 
-    def read_fragment(self):
+    def read_fragment(self,length):
         """
         Espera y lee un fragmento de un archivo.
 
         Devuelve el contenido del fragmento.
         """
-
-        # No podemos usar read_line, por que el fragmento puede tener \r y/o \n
-        # adentro
-
-        # Leer hasta tener una longitud, y parsear la longitud del archivo
-        while ' ' not in self.buffer and self.connected:
-            self._recv()
-        if not self.connected:
-            return ''
-        length, self.buffer = self.buffer.split(' ', 1)
-        length = int(length)
         # Ahora, esperamos hasta tener la cantidad de datos necesaria
         while len(self.buffer) < length and self.connected:
             self._recv()
+        if not self.connected:
+            return ''
         fragment, self.buffer = self.buffer[:length], self.buffer[length:]
         # Leer el \r\n final
         while len(self.buffer) < len(EOL) and self.connected:
@@ -159,7 +149,7 @@ class Client(object):
                 filename = self.read_line()
         else:
             logging.warn(u"Falló la solicitud de la lista de archivos" +
-                         "(code=%s %s)." % (self.status, message))
+                            "(code=%s %s)." % (self.status, message))
         return result
 
     def get_metadata(self, filename):
@@ -184,16 +174,12 @@ class Client(object):
         self.status, message = self.read_response_line()
         if self.status == CODE_OK:
             output = open(filename, 'wb')
-            fragment = self.read_fragment()
-            total = 0
-            while fragment:
-                total += len(fragment)
-                output.write(fragment)
-                fragment = self.read_fragment()
+            fragment = self.read_fragment(length)
+            output.write(fragment)
             output.close()
         else:
-            logging.warn("El servidor indico un error al leer de %s." %
-                         filename)
+            logging.warn("El servidor indico un error al leer de %s."
+                            % filename)
 
     def retrieve(self, filename):
         """
@@ -206,8 +192,8 @@ class Client(object):
         elif self.status == FILE_NOT_FOUND:
             logging.info("El archivo solicitado no existe.")
         else:
-            logging.warn("No se pudo obtener el archivo %s (code=%s)." %
-                         (filename, self.status))
+            logging.warn("No se pudo obtener el archivo %s (code=%s)."
+                            % (filename, self.status))
 
 
 def main():
@@ -219,24 +205,22 @@ def main():
                     'INFO': logging.INFO,
                     'WARN': logging.WARNING,
                     'ERROR': logging.ERROR,
-                    }
+    }
 
     # Parsear argumentos
     parser = optparse.OptionParser(usage="%prog [options] server")
     parser.add_option("-p", "--port",
-                      help=u"Número de puerto TCP donde escuchar",
-                      default=DEFAULT_PORT)
+        help=u"Número de puerto TCP donde escuchar", default=DEFAULT_PORT)
     parser.add_option("-v", "--verbose", dest="level", action="store",
-                      help=u"Determina cuanta información "
-                      u"de depuración a mostrar"
-                      " (valores posibles son: ERROR, WARN, INFO, DEBUG)",
-                      default="ERROR")
+        help=u"Determina cuanta información de depuración a mostrar"
+                "(valores posibles son: ERROR, WARN, INFO, DEBUG)",
+                default="ERROR")
     options, args = parser.parse_args()
     try:
         port = int(options.port)
     except ValueError:
-        sys.stderr.write("Numero de puerto invalido: %s\n" %
-                         repr(options.port))
+        sys.stderr.write("Numero de puerto invalido: %s\n"
+                            % repr(options.port))
         parser.print_help()
         sys.exit(1)
 
@@ -254,17 +238,17 @@ def main():
         sys.stderr.write("Error al conectarse\n")
         sys.exit(1)
 
-    print ("* Bienvenido al cliente HFTP - " \
+    print "* Bienvenido al cliente HFTP - " \
           "the Home-made File Transfer Protocol *\n" \
-          "* Estan disponibles los siguientes archivos:")
+          "* Estan disponibles los siguientes archivos:"
 
     files = client.file_lookup()
 
     for filename in files:
-        print (filename)
+        print filename
 
     if client.status == CODE_OK:
-        print ("* Indique el nombre del archivo a descargar:")
+        print "* Indique el nombre del archivo a descargar:"
         client.retrieve(raw_input().strip())
 
     client.close()

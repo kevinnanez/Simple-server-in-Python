@@ -1,56 +1,23 @@
-#Proyecto de laboratorio N°1
-##Redes y Sistemas Distribuidos- Grupo 05
+# Redes y Sistemas Distribuidos
+#Laboratorio Nº1: Aplicación Servidor
 
-###Introducción
+## Server
+El servidor, crea y atiende el socket en la dirección y puerto especificados donde se reciben nuevas conexiones de clientes. Se acepta una conexión a la vez y se espera a que concluya antes de seguir. La conexión comienza a ejecutarse en el handle de `connection.py`
 
-Se implementó un servidor de archivos secuencial basado en protocolo HFPT. El programa cliente fue provisto por la cátedra. Servidor y cliente pueden correr en máquinas distintas sobre la misma red. Se utilizó lenguaje de programación Python siguiendo estilo de código PEP8.
+## Connection
 
-###Server
-El servidor crea un socket `s_socket` de familia AF_INET y tipo SOCK_STREAM. Gracias a la llamada de socketopt podemos utilizar sin problemas el puerto en sesiones consecutivas del servidor (fue necesaria por problemas especificos al armar el servidor luego de haberlo cerrado poco tiempo atras). `bind` asigna a `s_socket` el puerto port y dirección adr, luego especifica el número de conexiones de `s_socket` en 1. Asigna al atributo `self.directory` la direccion directory. port, addr y directory son constantes importadas de `constants.py` .
-En la función `serve` se acepta la conexión con el  método accept() que crea un nuevo socket `conn_socket`, de igual familia y protocolo que `s_socket`, y devuelve la dirección del cliente en `client_ip`. En el atributo `self.connection` se crea la conexión creando un objeto Connection con conn_socket y directory. `self.connection.handle` ejecuta el loop principal del servidor.
-La función `main`, que fue provista por la cátedra, parsea los argumentos y lanza el server.
+### Handle
+En handle creamos un buffer para que se vaya llenando con datos que recibe el socket, esto es, las instrucciones del cliente.Con un loop nos aseguramos que el cliente sigue ahi con client_online, si el buffer esta vacío el servidor se cierra.
+Creamos una clase request para procesar lo que entra al buffer. Separamos cada instrucción por EOL que aparece y guardamos su tamaño. Separamos el request por espacios, la primera celda va ser la función y las demas (si las hay) son argumentos.
+La decisión de crear un diccionario para definir el comportamiento segun el comando fue la más  importante, porque nos ahorro bastantes lineas de código y funciones anidadas.
+Si el comando no existe tira error, si existe se fija la cantidad de argumentos y aca es donde entra a los métodos:
++ `files`: devuelve lista de archivos del directorio.
++ `get_file_listing`: hace un join con EOL de los archivos del directorio y los muestra al cliente.
++ `get_metadata`: si el archivo existe calcula el tamaño del directorio. Con `os.path.getsize` lo pasamos a string para imprimir en pantalla.
++ `get_slice`: si el archivo existe calcula su tamaño, para que no haya problemas con el offset se fija que la suma del offset y el size de lo que queremos leer no sea mayor al tamaño del archivo. Si no hay problemas. abre el archivo, se para en un determinado byte con `seek` y lee la cantidad de bytes (size) con `read`.
++ `quit`: cierra la conexión.
 
-###Conexión
-
-####init
-Se asignan `conn_socket` y directory a los atributos `client.socket` y `self.directory` respectivamente. Cream los atributos `current_state` para guardar el estado actual de la conexión y se asigna CODE_OK , `response` es la respuesta del servidor al cliente,`error_count` y `force_diconnection` se utilizaran en el manejo de excepciones, `force_send` y `client_is_here` son booleanos que se utilizaran para las respuestas forzadas y para el manejo de los errores. `wish` , `arguments` y `data` son  atributos que se utilizaran para el manejo e interpretación de comandos.
-
-####handle
-Es el loop principal del servidor. Decidimos guardar los comandos que envía el cliente en un buffer y dividirlos con `split` cuando aparezca el terminador `\r\n`, tuvimos que tener en cuenta que el terminador puede venir incompleto por lo que se implementaron las correspondientes excepciones. También decidimos guardar los argumentos de los comandos en una lista para facilitar su interpretación. Cierra la conexión cuando se ejecutan excepciones, errores fatales, desconexión del cliente o `quit`.
-
-####error_notify
-Funcionamiento: Desde aqui se notifica al servidor de los errores generados por el funcionamiento o la interacción con el cliente. Solo se envian notificaciones de errores, cualquier respuesta cargada al sistema por la ejecución de algún metodo sera eliminada.
-También, se resetea el estado del funcionamiento actual a 0 (CODE_OK)
-
-####respond
-Maneja las respuestas al cliente, puede o no recibir argumentos además de los atributos.
-Funcionamiento: Es aca donde se manejan las respuestas al cliente. Normalmente se la utiliza sin argumentos (solo atributos de la clase)    pero cuando es necesario es puede forzar una respuesta al cliente de la forma respond("Lorem ipsum"), para retornar datos al cliente de manera dinamica. Las respuestas exceptuando las forzadas van a notificar al cliente con el estado del funcionamiento, que en caso de ser 0, va enviar la respuesta que la clase tiene cargada en su atributo response.
-    A veces, el cliente puede desconectarse sin anticiparnos con un quit. Esta función particularmente notificara a handle() de ese evento cuando
-falle al intentar enviar datos al cliente, cancelando la conexión.
-
-####quit
-Cierra la sesión del cliente seteando `force_disconnection` en 1.
-
-####react
-Maneja los pedidos al servidor y determina el método a ejecutar. En `handle` guardamos el comando en `self.wish`, ahora lo interpretamos y verificamos que tanto el comando como sus argumentos sean válidos, si no lo son se ejecutan las excepciones correspondientes.
-Errores: Notificará de un error si * El pedido esta mal formado * Los argumentos son invalidos * El comando no es un metodo valido
-
-####get_file_listing
-Con `os.listdir` accedemos al directorio y lo listamos, si hubo error ejecuta la excepción correspondiente.
-Errores: Notificará de un error si * Ocurre un error al listar los archivos en el directorio
-
-####get_metada
-Si el archivo solicitado por el cliente existe en el directorio devuelve su tamaño. En este método tuvimos que tener en cuenta si el archivo no existe o si hubo problema al listar los archivos.
-Notificará de un error si * no existe el archivo del pedido * ocurre un error de tipo en el argumento (relatado en respond()) * el archivo no esta en el directorio * ocurre un error al listar los archivos
-
-####get_slice
-Este método fue el más complicado. Primero nos fijamos si el archivo existe, si los argumentos son válidos y si la porción del archivo solicitada por el cliente es válida. Si lo son abrimos el archivo en modo lectura y nos paramos en el offset, si es necesario divide la porción en partes más chicas para poder enviarlo. La respuesta incluye el tamaño de la porción + la porción enviada, hasta terminar de enviar lo solicitado. Notar que esta función tiene acceso a la ejecución de otras funciones como respond(), algo que no tienen otros metodos (de uso exclusivo del cliente), debido a que aqui son necesarias respuestas dinamicas. Para ello utilizamos dos variables tanto para notificar a respond() como para notificar a el handle de los envios apresurados.
-Errores: Notificará de un error si * no existe el archivo del pedido * ocurre un error de tipo en el argumento (relatado en respond() y aqui) * ocurre un error al abrir (open()) el archivo * el archivo no esta en el directorio * no se cumple offset≤filesize<offset+size
-
-
-###Bibliografia
-
-#####Librerías de Python:
-https://docs.python.org/2/library/basehttpserver.html#module-BaseHTTPServer
-
-#####Stackoverflow
+## ¿Qué estrategias existen para poder implementar este mismo servidor pero con capacidad de atender múltiples clientes simultáneamente?
+Para que el servidor pueda atender a mas de un cliente habría que editar el init de la clase `server`, especificamente `listen(x)` donde x es el numero máximo de clientes simultáneos, después habría que guardar en una lista los clientes activos y aplicar alguna politica para ver que cliente atiendo primero y durante cuanto tiempo para que los atienda a todos equitativamente.
+## ¿Qué dificultades nos encontramos?
+Al principio nos costó generar un buffer y llenarlo con el stream entrante, ademas que tuvimos muchas dificultades procesando los saltos de lineas. Por ultimo tambien tuvimos problemas al manejar los directorios dentro de del DEFAULT_DIR usado

@@ -7,9 +7,8 @@
 
 import optparse
 import socket
+from connection import Connection
 from constants import *
-import connection
-import os
 
 
 class Server(object):
@@ -20,11 +19,13 @@ class Server(object):
 
     def __init__(self, addr=DEFAULT_ADDR, port=DEFAULT_PORT,
                  directory=DEFAULT_DIR):
-        print ("Serving %s on %s:%s." % (directory, addr, port))
-        self.s_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.s_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        self.s_socket.bind((addr, port))
-        self.s_socket.listen(1)
+        print "Serving %s on %s:%s." % (directory, addr, port)
+        self.server_sockt = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        # Permite re usar el socket
+        self.server_sockt.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        # Configura socket para atender addr en port y escucha 1 conexion
+        self.server_sockt.bind((addr, port))
+        self.server_sockt.listen(1)
         self.directory = directory
 
     def serve(self):
@@ -33,10 +34,14 @@ class Server(object):
         y se espera a que concluya antes de seguir.
         """
         while True:
-            self.conn_socket, self.client_ip = self.s_socket.accept()
-            self.connection = connection.Connection(self.conn_socket,
-                                                    self.directory)
-            self.connection.handle()
+
+            # Aceptamos la conexion
+            connect_sockt, addr = self.server_sockt.accept()
+            # Llama a la clase Connection
+            connection = Connection(connect_sockt, self.directory)
+            # Handle administra la conexion
+            connection.handle()
+            # La conexion se cierra en handle
 
 
 def main():
@@ -67,6 +72,7 @@ def main():
 
     server = Server(options.address, port, options.datadir)
     server.serve()
+
 
 if __name__ == '__main__':
     main()

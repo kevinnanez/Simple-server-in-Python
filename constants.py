@@ -8,9 +8,9 @@ DEFAULT_DIR = 'testdata'
 DEFAULT_ADDR = 'localhost'
 DEFAULT_PORT = 19500
 
+
 EOL = '\r\n'
 
-BLANK = ' '
 
 CODE_OK = 0
 BAD_EOL = 100
@@ -20,6 +20,7 @@ INVALID_COMMAND = 200
 INVALID_ARGUMENTS = 201
 FILE_NOT_FOUND = 202
 BAD_OFFSET = 203
+
 
 error_messages = {
     CODE_OK: "OK",
@@ -34,17 +35,20 @@ error_messages = {
     BAD_OFFSET: "OFFSET EXCEEDS FILE SIZE",
 }
 
+
 def valid_status(s):
     return s in error_messages.keys()
+
 
 def fatal_status(s):
     assert valid_status(s)
     return 100 <= s < 200
 
+
 VALID_CHARS = set(".-_")
-for i in range(ord('A'), ord('Z') + 1):
+for i in xrange(ord('A'), ord('Z') + 1):
     VALID_CHARS.add(chr(i))
-for i in range(ord('a'), ord('z') + 1):
+for i in xrange(ord('a'), ord('z') + 1):
     VALID_CHARS.add(chr(i))
-for i in range(ord('0'), ord('9') + 1):
+for i in xrange(ord('0'), ord('9') + 1):
     VALID_CHARS.add(chr(i))
